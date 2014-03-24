@@ -7,13 +7,34 @@ Cryptbaord - A X11 Encrypted Clipboard Manager
 Encrypt stdin, primary selection, or pinentry<Via pish> with GnuPG and send to X11 selection Clipboard. Cryptboard also brings strong integrity checking to your clipboard by signing your clipboard and verifying the signature before pasting.
 
 
+### Dependencies
+
+
+* **GnuPG** - For encryption and decryption
+* **xclip** - For X11 clipboard input and output
+* **xdotool** - For typing decrypted Cryptboard to cursor position
+* **pish** - For pinentery to Cryptboard
+
+
+Command Options
+---------------
+
+
+- `cryptboard -i`   :Read from stdin, or --stdin
+- `cryptboard -a`   :Ask with pinentry via pish, or --ask
+- `cryptboard -c`   :Encrypt primary to clipboard, or --copy
+- `cryptboard -p`   :Decrypt clipboard to cursor position, or --paste
+- `cryptboard -d`   :Delete all the things, or --delete
+
+
+
 Set these Helpful keybindings in your DE/WM
 -------------------------------------------
 
 Encrypt the test you highlighted with your mouse to Clipboard. Then clear primary selection.
 
 
-    Super-C = cryptboard -s
+    Super-C = cryptboard -c
 
 
 Pipe Clipboard contents into GnuPG to decrypt and pipe into xdotool to type to current mouse position
@@ -22,10 +43,10 @@ Pipe Clipboard contents into GnuPG to decrypt and pipe into xdotool to type to c
     Super-V = cryptboard -p
 
 
-Open pinentry with `pish` pipe pinentry stdout to GnuPG stdin and pipe that to X11 Clipboard
+Delete all selections, and delete the X11 Clipboard 10 times by default to overflow clipboard buffer
 
 
-    Super-A = cryptboard -a
+    Super-D = cryptboard -d
 
 
 Pipe to Cryptboard
