@@ -7,8 +7,8 @@ Cryptbaord - A X11 Encrypted Clipboard Manager
 Encrypt stdin, primary selection, or pinentry<Via pish> with GnuPG and send to X11 selection Clipboard
 
 
-Helpful keybindings
--------------------
+Set these Helpful keybindings in your DE/WM
+-------------------------------------------
 
 Encrypt the test you highlighted with your mouse to Clipboard. Then clear primary selection.
 
