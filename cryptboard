@@ -19,9 +19,12 @@ GPGde="${GPG} -a --batch --quiet"
 HELP="
 echo 'Crypt to clipboard' | cryptboard -i
 Set Keybindings in your DE, WM, or Gnu Screen. Something like this
-Ctrl-C = cryptboard -s
-Ctrl-V = cryptboard -p
-Ctrl-A = cryptboard -a
+Super-C = cryptboard -s
+Super-V = cryptboard -p
+Super-A = cryptboard -a
+
+Use Ctrl-V to paste ASCII Armor GPG Encrypted Message
+No more excuses. Encrypting and Decrypting GPG messages is stupid simple
 "
 
 case "${1}" in
@@ -33,14 +36,14 @@ case "${1}" in
     ;;
   -s|--select)
     xclip -selection primary -o | ${GPGen} -r "${KEYID}" -e | xclip -selection clipboard -i
-    echo '' | xclip -selection primary -i
+    echo -n '' | xclip -selection primary -i
     ;;
   -p|--paste)
     sleep 1
     xdotool type "$(xclip -selection clipboard -o | ${GPGde} -d)"
     ;;
   *)
-    echo "%{HELP}"
+    echo "${HELP}"
 esac
 
 exit 0
