@@ -5,59 +5,86 @@
 #   Depends: xdotool, xclip, GnuPG, pish
 #   NOTE: http://github.com/tdwyer/pish
 #
-#   cryptboard       GPLv3             v1.0
+#   Cryptboard      GPLv3              v1.1
 #   Thomas Dwyer    <devel@tomd.tel>   http://tomd.tel/
 #
-
-
-# Any Key ID gpg accepts for -r will work. alice@example.com, C18D3651, or fingerprint
-KEYID="C18D3651"
-DEL_DEPTH=10
-PINENTRY=$(which pish) # The stinky one
-GPG=$(which gpg) ;[[ ${?} -gt 0 ]] && (echo "Install gpg (GnuPG) >=2.0")
-GPGen="${GPG} -a --batch --quiet --yes -s --cipher-algo TWOFISH --digest-algo SHA512"
-GPGde="${GPG} -a --batch --quiet"
+CONF="$HOME/.cryptboard.conf"
+. ${CONF} 2>/dev/null
+#
+SELF="$(echo ${0} |rev |cut -d '/' -f 1 |rev)"
+#
+[[ -z ${CLIP_DEL_DEPTH} ]] && CLIP_DEL_DEPTH=10
+XCLIP=$(which xclip 2>/dev/null)
+XDO=$(which xdotool 2>/dev/null)
+PINENTRY=$(which pish 2>/dev/null) # http://github.com/tdwyer/pish
+GPG=$(which gpg 2>/dev/null)
+#
+GPGde="${GPG} -a --yes --batch"
+#
+GPGen="${GPG} -a -s -q --yes --batch"
+[[ -z ${CIPHER} ]] && CIPHER="TWOFISH"
+[[ -z ${DIGEST} ]] && DIGEST="SHA512"
+GPGen+=" --cipher-algo ${CIPHER}"
+GPGen+=" --digest-algo ${DIGEST}"
+if [[ -z ${KEYID} ]] ;then
+  GPGen+=" --default-recipient-self"
+else
+  GPGen+=" --recipient ${KEYID}"
+fi
 HELP="
-Cryptboard depends on xclip, xdotool, and pish
-http://github.com/tdwyer/pish
+Usage: ${SELF} [-i, --stdin] [ -a, --ask] [-c, --copy]
+                  [-p, --paste] [-d, --delete]
 
-cryptboard -i   :Read from stdin
-cryptboard -a   :Ask with pinentry via pish
-cryptboard -c   :Encrypt primary to clipboard
-cryptboard -p   :Decrypt clipboard to cursor position
-cryptboard -d   :Delete all the things
+${SELF} -i   :Read from stdin
+${SELF} -a   :Ask with pinentry via ${PINENTRY}
+${SELF} -c   :Encrypt primary to clipboard
+${SELF} -p   :Decrypt clipboard to cursor position
+${SELF} -d   :Delete all the things
 
-echo 'Crypt to clipboard' | cryptboard -i
-Set Keybindings in your DE, WM, or Gnu Screen. Something like this
+echo 'encrypt to clipboard' | ${SELF} -i
+Set these useful keyboard bindings in your DE or WM
 
-Super-C = cryptboard -c
-Super-V = cryptboard -p
-Super-D = cryptboard -d
+Super+C = ${SELF} -c
+Super+V = ${SELF} -p
+Super+D = ${SELF} -d
 
-Use Ctrl-V to paste ASCII Armor GPG Encrypted Message
-No more excuses. Encrypting and Decrypting GPG messages is stupid simple
+Use normal Ctrl-V to paste the OpenPGP ASCII armor encrypted message
+
+Configuration location: $HOME/.cryptboard.conf
+KEYID=''  # Use default key as default recipient
+CIPHER='' # Defualt TWOFISH-256
+DIGEST='' # Default SHA512
+
+${SELF} depends on GnuPG, xclip, xdotool, and pish
+https://github.com/tdwyer/pish
 "
 
 case "${1}" in
   -i|--stdin)
-    ${GPGen} -r "${KEYID}" -e | xclip -selection clipboard -i
+    ${GPGen} -e | \
+      ${XCLIP} -selection clipboard -i
     ;;
   -a|--ask)
-    ${PINENTRY} | ${GPGen} -r "${KEYID}" -e | xclip -selection clipboard -i
+    ${PINENTRY} | ${GPGen} -e | \
+      ${XCLIP} -selection clipboard -i
     ;;
   -c|--copy)
-    xclip -selection primary -o | ${GPGen} -r "${KEYID}" -e | xclip -selection clipboard -i
-    echo -n '' | xclip -selection primary -i
+    ${XCLIP} -selection primary -o | \
+      ${GPGen} -e | \
+      ${XCLIP} -selection clipboard -i
+    echo -n '' | ${XCLIP} -selection primary -i
     ;;
   -p|--paste)
     sleep 0.5
-    xdotool type "$(xclip -selection clipboard -o | ${GPGde} -d)"
+    ${XDO} type "$(${XCLIP} -selection clipboard -o | ${GPGde} -d)"
     ;;
   -d|--delete)
-    echo -n '' | xclip -selection primary -i
-    echo -n '' | xclip -selection secondary -i
-    while [[ ${i} -lt ${DEL_DEPTH} ]] ;do
-      echo -n '' | xclip -selection clipboard -i
+    echo -n '' | ${XCLIP} -selection primary -i
+    echo -n '' | ${XCLIP} -selection secondary -i
+    # Other clipboard mangers on the system may buffer a history
+    # Overflow their buffers do remove any sensitive data they may have
+    while [[ ${i} -lt ${CLIP_DEL_DEPTH} ]] ;do
+      echo -n '' | ${XCLIP} -selection clipboard -i
       i=$(expr ${i} + 1)
     done
     ;;
@@ -65,4 +92,4 @@ case "${1}" in
       echo "${HELP}"
 esac
 
-exit 0
+exit ${?}

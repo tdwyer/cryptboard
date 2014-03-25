@@ -4,7 +4,9 @@ Cryptboard
 Cryptbaord - A X11 Encrypted Clipboard Manager
 
 
-Encrypt stdin, primary selection, or pinentry<Via pish> with GnuPG and send to X11 selection Clipboard. Cryptboard also brings strong integrity checking to your clipboard by signing your clipboard and verifying the signature before pasting.
+Encrypt stdin, primary selection, or **pinentry** via [pish](https://github.com/tdwyer/pish "pish") with GnuPG and send to X11 selection Clipboard. Cryptboard also brings strong integrity checking to your clipboard by signing your clipboard and verifying the signature before pasting.
+
+`cryptboard --paste` uses `xdotool type` to send decrypted clipboard to cursor position. A pleasant side effect of this is that it can paste into VNC windows without clipboard sharing.
 
 
 ### Dependencies
@@ -13,18 +15,18 @@ Encrypt stdin, primary selection, or pinentry<Via pish> with GnuPG and send to X
 * **GnuPG** - For encryption and decryption
 * **xclip** - For X11 clipboard input and output
 * **xdotool** - For typing decrypted Cryptboard to cursor position
-* **pish** - For pinentery to Cryptboard
+* **[pish](https://github.com/tdwyer/pish "pish")** - For pinentery to Cryptboard
 
 
 Command Options
 ---------------
 
 
-- `cryptboard -i`   :Read from stdin, or --stdin
-- `cryptboard -a`   :Ask with pinentry via pish, or --ask
-- `cryptboard -c`   :Encrypt primary to clipboard, or --copy
-- `cryptboard -p`   :Decrypt clipboard to cursor position, or --paste
-- `cryptboard -d`   :Delete all the things, or --delete
+- `cryptboard -i`   :Read from stdin, or `--stdin`
+- `cryptboard -a`   :Ask with pinentry via pish, or `--ask`
+- `cryptboard -c`   :Encrypt primary to clipboard, or `--copy`
+- `cryptboard -p`   :Decrypt clipboard and type to cursor position, or `--paste`
+- `cryptboard -d`   :Delete all the things, or `--delete`
 
 
 
@@ -53,7 +55,7 @@ Pipe to Cryptboard
 ------------------
 
 
-You can pipe anything to Clipboard to be encrypted into your X11 clipboard
+Pipe to Cryptboard to encrypt into your X11 clipboard
 
 
     echo "encrypt me" | cryptboard -i
@@ -63,7 +65,7 @@ Paste ASCII Armor Encrypted GPG Message
 ---------------------------------------
 
 
-Your clipboard has the contents already in a ASCII Armor message format. There are no more excuses not to encrypt all the tings. Privacy is just a click away.
+Your clipboard has the contents already in OpenPGP ASCII armor message format. There are no more excuses not to encrypt all the tings. Privacy is just a click away.
 
 
     Ctrl+V or Right-Click select Paste
@@ -106,3 +108,15 @@ Bam! IM me :)
     Z92dnAuNr63eG0/0PvhEO8tmmt61laWnI8Ecu9h9
     =2Z0k
     -----END PGP MESSAGE-----
+
+
+Decrypt GPG Encrypted Messages
+------------------------------
+
+
+You can copy a GPG encrypted message block to your clipboard line normal `Ctrl+C`. Then `cryptboard -p` will *type* the decrypted message to your cursor position.
+
+
+    Cryptboard not only secures your clipboard,
+    but it also makes gpg easier to use.
+
