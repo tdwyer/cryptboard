@@ -4,9 +4,9 @@ Cryptboard
 Cryptbaord - A X11 Encrypted Clipboard Manager
 
 
-Encrypt stdin, primary selection, or **pinentry** via [pish](https://github.com/tdwyer/pish "pish") with GnuPG and send to X11 selection Clipboard. Cryptboard also brings strong integrity checking to your clipboard by signing your clipboard and verifying the signature before pasting.
+Encrypt primary selection or stdin with GnuPG and send to X11 Clipboard. Cryptboard also verifies the clipboards digital signature before pasting.
 
-`cryptboard --paste` uses `xdotool type` to send decrypted clipboard to cursor position. A pleasant side effect of this is that it can paste into VNC windows without clipboard sharing.
+`cryptboard --paste` uses `xdotool type` to **Type** the decrypted clipboard to cursor position **As Seen in on TV :p**. A pleasant side effect of this is that it can paste into VNC windows without clipboard sharing.
 
 
 ### Dependencies
@@ -15,108 +15,88 @@ Encrypt stdin, primary selection, or **pinentry** via [pish](https://github.com/
 * **GnuPG** - For encryption and decryption
 * **xclip** - For X11 clipboard input and output
 * **xdotool** - For typing decrypted Cryptboard to cursor position
-* **[pish](https://github.com/tdwyer/pish "pish")** - For pinentery to Cryptboard
 
 
 Command Options
 ---------------
 
 
-- `cryptboard -i`   :Read from stdin, or `--stdin`
-- `cryptboard -a`   :Ask with pinentry via pish, or `--ask`
-- `cryptboard -c`   :Encrypt primary to clipboard, or `--copy`
-- `cryptboard -p`   :Decrypt clipboard and type to cursor position, or `--paste`
-- `cryptboard -d`   :Delete all the things, or `--delete`
+`cryptboard [OPTION] [-r recipient]`
+
+* -i, --stdin   :Read from stdin
+* -o, --stdout  :Pipe to stdout
+* -c, --copy    :Encrypt primary selection to clipboard
+* -p, --paste   :Decrypt clipboard to cursor position
+* -d, --delete  :Delete all the things
+* -r  recipient :Encrypt to recipient's key. This flag can be used multiple times
 
 
-
-Set these Helpful keybindings in your DE/WM
--------------------------------------------
-
-Encrypt the test you highlighted with your mouse to Clipboard. Then clear primary selection.
+### Shortened Names
 
 
-    Super-C = cryptboard -c
+**Cryptboard** is a long name. However, you can use symbolic links to `cryptboard` to preform the same actions.
 
 
-Pipe Clipboard contents into GnuPG to decrypt and pipe into xdotool to type to current mouse position
+`ln -s /usr/bin/cryptboard cb-[OPTION]`
+
+* cb-i    :Read from stdin
+* cb-o    :Pipe to stdout
+* cb-c    :Encrypt primary selection to clipboard
+* cb-p    :Decrypt clipboard to cursor position
+* cb-d    :Delete all the things
 
 
-    Super-V = cryptboard -p
+Set these useful keyboard bindings in your DE or WM
+---------------------------------------------------
 
 
-Delete all selections, and delete the X11 Clipboard 10 times by default to overflow clipboard buffer
+It is best to not stomp on the `Ctrl+C` and `Ctrl+V` key-combos. You will want them for the bonus features.
 
 
-    Super-D = cryptboard -d
+* `Super+C` = `cryptboard --copy`
+* `Super+V` = `cryptboard --paste`
+* `Super+D` = `cryptboard --delete`
 
 
-Pipe to Cryptboard
-------------------
+Create OpenPGP ASCII armor message
+----------------------------------
 
 
-Pipe to Cryptboard to encrypt into your X11 clipboard
+Highlight the text with your mouse and copy with `cryptboard -c`. You'll want to add one or two `-r email_addr` declaring who you want to be able to decrypt the message.
 
 
-    echo "encrypt me" | cryptboard -i
+    $ cryptboard -c -r alice@example.com
 
 
-Paste ASCII Armor Encrypted GPG Message
----------------------------------------
+Paste encrypted message with Ctrl+V or select Paste from right-click menu
 
 
-Your clipboard has the contents already in OpenPGP ASCII armor message format. There are no more excuses not to encrypt all the tings. Privacy is just a click away.
+Decrypt OpenPGP ASCII armor message
+-----------------------------------
 
 
-    Ctrl+V or Right-Click select Paste
+**First**
+* Highlight the complete message with your mouse and copy with Ctrl+C
+
+**Second**
+* decrypt `cryptboard -p`
 
 
-Bam! IM me :)
+Pipe Secrete Messages into and out Cryptboard
+-----------------------------------------------
 
 
-        -----BEGIN PGP MESSAGE-----
-    Version: GnuPG v2.0.22 (GNU/Linux)
-
-    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
-    =2Z0k
-    -----END PGP MESSAGE-----
+One of the very handy features of **Cryptboard** is it's support for *Piping*. With it you can *pipe* your decrypted message directly to a file, or where ever. You can also pipe a message into **Cryptboard** and use the normal `Ctrl+V` to paste the encrypted message block into a website form, email, IM, StasiBook post, or anywhere.
 
 
-Decrypt GPG Encrypted Messages
-------------------------------
+Technically you can *pipe* sexy photos into Cryptboard and paste the OpenPGP ASCII Armor Message on your wifes StasiBook page.
 
 
-You can copy a GPG encrypted message block to your clipboard line normal `Ctrl+C`. Then `cryptboard -p` will *type* the decrypted message to your cursor position.
+    cat porkNbeans.jpg | cryptboard -i
 
 
-    Cryptboard not only secures your clipboard,
-    but it also makes gpg easier to use.
+Then your wife can Highlight the message with her mouse and right-click,copy
+
+
+    cryptboard -o > beans.jpg
 

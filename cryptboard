@@ -2,94 +2,162 @@
 #
 #   Cryptbaord - A X11 Encrypted Clipboard Manager
 #
-#   Depends: xdotool, xclip, GnuPG, pish
-#   NOTE: http://github.com/tdwyer/pish
+#   Depends: GnuPG, xdotool, xclip
 #
-#   Cryptboard      GPLv3              v1.1
+#   Cryptboard      GPLv3              v1.2
 #   Thomas Dwyer    <devel@tomd.tel>   http://tomd.tel/
 #
-CONF="$HOME/.cryptboard.conf"
+SELF="$(echo ${0} |rev |cut -d '/' -f 1 |rev)"
+# Set and read config
+CONF="${HOME}"/.config/cryptboard/cryptboard.conf
+if [[ ! -f "${CONF}" ]] ;then
+  mkdir -p "${HOME}"/.config/cryptboard
+  cp /usr/share/cryptboard/cryptboard.conf "${CONF}"
+  chmod 0700 "${CONF}"
+fi
 . ${CONF} 2>/dev/null
 #
-SELF="$(echo ${0} |rev |cut -d '/' -f 1 |rev)"
-#
-[[ -z ${CLIP_DEL_DEPTH} ]] && CLIP_DEL_DEPTH=10
-XCLIP=$(which xclip 2>/dev/null)
-XDO=$(which xdotool 2>/dev/null)
-PINENTRY=$(which pish 2>/dev/null) # http://github.com/tdwyer/pish
-GPG=$(which gpg 2>/dev/null)
-#
-GPGde="${GPG} -a --yes --batch"
-#
-GPGen="${GPG} -a -s -q --yes --batch"
-[[ -z ${CIPHER} ]] && CIPHER="TWOFISH"
-[[ -z ${DIGEST} ]] && DIGEST="SHA512"
-GPGen+=" --cipher-algo ${CIPHER}"
-GPGen+=" --digest-algo ${DIGEST}"
-if [[ -z ${KEYID} ]] ;then
-  GPGen+=" --default-recipient-self"
-else
-  GPGen+=" --recipient ${KEYID}"
-fi
 HELP="
-Usage: ${SELF} [-i, --stdin] [ -a, --ask] [-c, --copy]
-                  [-p, --paste] [-d, --delete]
+Usage: ${SELF} [OPTION] [-r recipient] || ln -s ${0} cb-[OPTION]
 
-${SELF} -i   :Read from stdin
-${SELF} -a   :Ask with pinentry via ${PINENTRY}
-${SELF} -c   :Encrypt primary to clipboard
-${SELF} -p   :Decrypt clipboard to cursor position
-${SELF} -d   :Delete all the things
+-i, --stdin   :Read from stdin
+-o, --stdout  :Pipe to stdout
+-c, --copy    :Encrypt primary selection to clipboard
+-p, --paste   :Decrypt clipboard to cursor position
+-d, --delete  :Delete all the things
+-r  recipient :Email address associated with the PGP key to encrypt to
+               - Note: The -r flag can be used multiple times
 
-echo 'encrypt to clipboard' | ${SELF} -i
 Set these useful keyboard bindings in your DE or WM
 
-Super+C = ${SELF} -c
-Super+V = ${SELF} -p
-Super+D = ${SELF} -d
+Super+C = ${SELF} --copy
+Super+V = ${SELF} --paste
+Super+D = ${SELF} --delete
 
-Use normal Ctrl-V to paste the OpenPGP ASCII armor encrypted message
+* Create OpenPGP ASCII armor message *
+1. Highlight the text with your mouse and run
+2.  $ cryptboard -c -r alice@example.com
+3. Paste encrypted message with Ctrl+V or select Paste from right-click menu
 
-Configuration location: $HOME/.cryptboard.conf
-KEYID=''  # Use default key as default recipient
-CIPHER='' # Defualt TWOFISH-256
-DIGEST='' # Default SHA512
+* Decrypt OpenPGP ASCII armor message *
+1. Highlight the complete message with your mouse and copy with Ctrl+C then run
+2.  $ cryptboard -p
 
-${SELF} depends on GnuPG, xclip, xdotool, and pish
-https://github.com/tdwyer/pish
+Configuration: ${CONF}
+Dependencies: GnuPG, xclip, xdotool
 "
+# Set vars
+[[ -z ${CLIP_DEL_DEPTH} ]] && CLIP_DEL_DEPTH=10
+[[ -z ${KEYID} ]] && KEYID=""
+[[ -z ${CIPHER} ]] && CIPHER="TWOFISH"
+[[ -z ${DIGEST} ]] && DIGEST="SHA512"
+[[ -z ${KEYSERVER} ]] && KEYSERVER="pool.sks-keyservers.net"
+[[ -z ${TRUST_MODEL} ]] && TRUST_MODEL="always"
+# Set bins
+XCLIP_EXE=$(whereis -b xclip | cut -d ' ' -f 2)
+XDO=$(whereis -b xdotool | cut -d ' ' -f 2)
+GPG=$(whereis -b gpg | cut -d ' ' -f 2)
+# Check bins
+if [[ ! -x ${XCLIP_EXE} ]] ;then echo "You must install xclip" ;exit 1 ;fi
+if [[ ! -x ${XDO} ]] ;then echo "You must install xdotool" ;exit 1 ;fi
+if [[ ! -x ${GPG} ]] ;then echo "You must install GnuPG" ;exit 1 ;fi
+# Set command options
+XCLIP="${XCLIP_EXE} -selection"
+GPGde="${GPG} -a --yes --batch"
+GPGen="${GPG} --trust-model ${TRUST_MODEL}"
+GPGen+=" -a -s -q --yes --batch"
+GPGen+=" --cipher-algo ${CIPHER}"
+GPGen+=" --digest-algo ${DIGEST}"
 
-case "${1}" in
-  -i|--stdin)
-    ${GPGen} -e | \
-      ${XCLIP} -selection clipboard -i
-    ;;
-  -a|--ask)
-    ${PINENTRY} | ${GPGen} -e | \
-      ${XCLIP} -selection clipboard -i
-    ;;
-  -c|--copy)
-    ${XCLIP} -selection primary -o | \
-      ${GPGen} -e | \
-      ${XCLIP} -selection clipboard -i
-    echo -n '' | ${XCLIP} -selection primary -i
-    ;;
-  -p|--paste)
-    sleep 0.5
-    ${XDO} type "$(${XCLIP} -selection clipboard -o | ${GPGde} -d)"
-    ;;
-  -d|--delete)
-    echo -n '' | ${XCLIP} -selection primary -i
-    echo -n '' | ${XCLIP} -selection secondary -i
-    # Other clipboard mangers on the system may buffer a history
-    # Overflow their buffers do remove any sensitive data they may have
-    while [[ ${i} -lt ${CLIP_DEL_DEPTH} ]] ;do
-      echo -n '' | ${XCLIP} -selection clipboard -i
-      i=$(expr ${i} + 1)
+
+main() {
+  parse_args "${@}"
+  add_recipients
+#  if [[ "${cmd}" == "stdin" || "${cmd}" == "copy" ]]
+#    then resolve_keys
+#  fi
+  run
+}
+
+parse_args() {
+  recipients=""
+  local has_recipient=0
+  for item in ${SELF} ${@} ;do
+    case "${item}" in
+      -i|--stdin|cb-i|cb-stdin)
+        cmd="stdin"
+      ;;
+      -o|--stdout|cb-o|cb-stdout)
+        cmd="stdout"
+      ;;
+      -c|--copy|cb-c|cb-copy)
+        cmd="copy"
+      ;;
+      -p|--paste|cb-p|cb-paste)
+        cmd="paste"
+      ;;
+      -d|--delete|cb-d|cb-delete)
+        cmd="delete"
+      ;;
+      -r)
+        local has_recipient=1
+    esac
+    if [[ ${has_recipient} -eq 1 ]]
+      then local has_recipient=$(expr ${has_recipient} + 1)
+    elif [[ ${has_recipient} -eq 2 ]]
+      then recipients+=" ${item}" ;local has_recipient=0
+    fi
+  done
+}
+
+add_recipients() {
+  [[ ! -z ${recipients} ]] && KEYID+="${recipients}"
+  if [[ -z ${KEYID} ]] ;then
+    GPGen+=" --default-recipient-self"
+  else
+    for key in ${KEYID} ;do
+      [[ ! -z "${key}" ]] && GPGen+=" -r ${key}"
     done
+  fi
+}
+
+resolve_keys() {
+  for key in ${KEYID} ;do
+    ${GPG} --list-keys "${key}" 1>/dev/null 2>&1
+    if [[ ${?} -gt 0 ]] ;then
+      ${GPG} --keyserver ${KEYSERVER} --recv-keys "${key}"
+    fi
+  done
+}
+
+run() {
+  case "${cmd}" in
+    stdin)
+      ${GPGen} -e | ${XCLIP} clipboard -i
+    ;;
+    stdout)
+      ${XCLIP} clipboard -o | ${GPGde} -d
+    ;;
+    copy)
+      ${XCLIP} primary -o | ${GPGen} -e | ${XCLIP} clipboard -i
+      echo -n '' | ${XCLIP} primary -i
+    ;;
+    paste)
+      sleep 0.5
+      ${XDO} type "$(${XCLIP} clipboard -o | ${GPGde} -d)"
+    ;;
+    delete)
+      echo -n '' | ${XCLIP} primary -i
+      echo -n '' | ${XCLIP} secondary -i
+      while [[ ${i} -lt ${CLIP_DEL_DEPTH} ]] ;do
+        echo -n '' | ${XCLIP} clipboard -i
+        i=$(expr ${i} + 1)
+      done
     ;;
     *)
-      echo "${HELP}"
-esac
+        echo "${HELP}"
+  esac
+}
 
+main ${@}
 exit ${?}
