@@ -28,7 +28,10 @@ Command Options
 * -c, --copy    :Encrypt primary selection to clipboard
 * -p, --paste   :Decrypt clipboard to cursor position
 * -d, --delete  :Delete all the things
-* -r  recipient :Email address associated with the PGP key to encrypt to. `This flag can be used multiple times`
+* -r  recipient :PGP Key ID key to encrypt to. `This flag can be used multiple times`
+
+
+*Note: Keys not in keyring will be requested from keyserver*
 
 
 ### Shortened Names

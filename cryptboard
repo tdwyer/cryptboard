@@ -25,8 +25,8 @@ Usage: ${SELF} [OPTION] [-r recipient] || ln -s ${0} cb-[OPTION]
 -c, --copy    :Encrypt primary selection to clipboard
 -p, --paste   :Decrypt clipboard to cursor position
 -d, --delete  :Delete all the things
--r  recipient :Email address associated with the PGP key to encrypt to
-               - Note: The -r flag can be used multiple times
+-r  recipient :PGP Key ID to encrypt to. This flag can be used multiple times
+               - Note: Keys not in keyring will be requested from keyserver
 
 Set these useful keyboard bindings in your DE or WM
 
@@ -73,9 +73,9 @@ GPGen+=" --digest-algo ${DIGEST}"
 main() {
   parse_args "${@}"
   add_recipients
-#  if [[ "${cmd}" == "stdin" || "${cmd}" == "copy" ]]
-#    then resolve_keys
-#  fi
+  if [[ "${cmd}" == "stdin" || "${cmd}" == "copy" ]]
+    then resolve_keys
+  fi
   run
 }
 
@@ -125,7 +125,7 @@ resolve_keys() {
   for key in ${KEYID} ;do
     ${GPG} --list-keys "${key}" 1>/dev/null 2>&1
     if [[ ${?} -gt 0 ]] ;then
-      ${GPG} --keyserver ${KEYSERVER} --recv-keys "${key}"
+      ${GPG} --keyserver ${KEYSERVER} --recv-keys ${key}
     fi
   done
 }
