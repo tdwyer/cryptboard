@@ -6,7 +6,7 @@ Cryptbaord - A X11 Encrypted Clipboard Manager
 
 Encrypt primary selection or stdin with GnuPG and send to X11 Clipboard. Cryptboard also verifies the clipboards digital signature before pasting.
 
-`cryptboard --paste` uses `xdotool type` to **Type** the decrypted clipboard to cursor position **As Seen in on TV :p**. A pleasant side effect of this is that it can paste into VNC windows without clipboard sharing.
+`cryptboard --paste` uses `xdotool type` to **Type** the decrypted clipboard to cursor position *(As Seen in on TV)*. A pleasant side effect of this is that it can paste into VNC windows without clipboard sharing.
 
 
 ### Dependencies
@@ -28,7 +28,7 @@ Command Options
 * -c, --copy    :Encrypt primary selection to clipboard
 * -p, --paste   :Decrypt clipboard to cursor position
 * -d, --delete  :Delete all the things
-* -r  recipient :Encrypt to recipient's key. This flag can be used multiple times
+* -r  recipient :Email address associated with the PGP key to encrypt to. `This flag can be used multiple times`
 
 
 ### Shortened Names
@@ -46,8 +46,8 @@ Command Options
 * cb-d    :Delete all the things
 
 
-Set these useful keyboard bindings in your DE or WM
----------------------------------------------------
+Set these keyboard bindings in your DE or WM
+--------------------------------------------
 
 
 It is best to not stomp on the `Ctrl+C` and `Ctrl+V` key-combos. You will want them for the bonus features.
@@ -65,21 +65,18 @@ Create OpenPGP ASCII armor message
 Highlight the text with your mouse and copy with `cryptboard -c`. You'll want to add one or two `-r email_addr` declaring who you want to be able to decrypt the message.
 
 
-    $ cryptboard -c -r alice@example.com
+    $ cryptboard -c -r alice@example.com -r bob@example.com
 
 
-Paste encrypted message with Ctrl+V or select Paste from right-click menu
+Paste encrypted message with `Ctrl+V` or select *Paste* from right-click menu
 
 
-Decrypt OpenPGP ASCII armor message
------------------------------------
+Steps to Decrypt OpenPGP ASCII armor message
+--------------------------------------------
 
 
-**First**
-* Highlight the complete message with your mouse and copy with Ctrl+C
-
-**Second**
-* decrypt `cryptboard -p`
+* **First** Highlight encrypted message with your mouse and hit `Ctrl+C`
+* **Then**  Decrypt `cryptboard -p`
 
 
 Pipe Secrete Messages into and out Cryptboard
@@ -95,7 +92,7 @@ Technically you can *pipe* sexy photos into Cryptboard and paste the OpenPGP ASC
     cat porkNbeans.jpg | cryptboard -i
 
 
-Then your wife can Highlight the message with her mouse and right-click,copy
+Then your wife can copy the encrypted message and decrypt to an image file.
 
 
     cryptboard -o > beans.jpg
